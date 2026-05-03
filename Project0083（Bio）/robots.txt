@@ -1,0 +1,13 @@
+# [SECURITY NOTICE] 
+# INTERNAL SECTION: NOSRC_NODE_0x0083FA
+# ACCESS RESTRICTED TO AUTHORIZED OPERATORS ONLY.
+# --------------------------------------------------
+
+User-agent: *
+Disallow: /
+
+# WARNING: 
+# ALL CRAWLERS AND INDEXING BOTS WILL BE TREATED AS 
+# UNAUTHORIZED NEURAL PULSE INTERFERENCE.
+# --------------------------------------------------
+# [STAY IN THE LIGHT]

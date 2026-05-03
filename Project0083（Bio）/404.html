@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | nosrc Firewall</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --main-color: #ef4444; --bg-dark: #030303; } /* 404页面主色调改为警告红 */
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg-dark); color: var(--main-color); overflow: hidden; }
+        
+        .void-bg { position: fixed; inset: 0; background: radial-gradient(circle at center, #2a0808 0%, var(--bg-dark) 80%); opacity: 0.5; z-index: -1; }
+        .scanlines::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none; z-index: 100; }
+        
+        .terminal-box { backdrop-filter: blur(20px); background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(239, 68, 68, 0.3); position: relative; box-shadow: 0 0 30px rgba(239, 68, 68, 0.1); }
+        
+        .glitch-text { animation: digital-noise 2s infinite; }
+        @keyframes digital-noise {
+            0%, 100% { filter: contrast(1) hue-rotate(0deg); opacity: 1; transform: translate(0); }
+            5% { filter: contrast(1.5) hue-rotate(10deg); opacity: 0.8; transform: translate(-2px, 1px); }
+            10% { filter: contrast(1.2) hue-rotate(-5deg); opacity: 0.9; transform: translate(2px, -1px); }
+            15%, 95% { filter: contrast(1) hue-rotate(0deg); opacity: 1; transform: translate(0); }
+        }
+
+        .typing::after { content: "_"; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center scanlines">
+    <div class="void-bg"></div>
+
+    <div class="w-full max-w-3xl flex flex-col relative z-10 terminal-box p-10">
+        <div class="border-b border-red-900/30 pb-4 mb-8 flex justify-between text-[10px] tracking-[0.4em] font-bold text-red-500/60">
+            <span>NOSRC INTERNAL AUDIT</span>
+            <span class="glitch-text">ERR_CODE: 404_VOID</span>
+        </div>
+
+        <div id="log-container" class="space-y-6 text-sm leading-relaxed text-red-400">
+            </div>
+
+        <div id="action-btn" class="mt-12 opacity-0 transition-opacity duration-1000 hidden">
+            <button onclick="window.location.href='/'" class="w-full py-4 border border-red-900/50 hover:bg-red-900/20 hover:border-red-500 transition-all text-xs tracking-[0.5em] font-bold">
+                [ 强 制 驱 逐 至 安 全 节 点 ]
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const logs = [
+            ">> 警告：检测到未授权的物理扇区寻址请求。",
+            ">> 你试图访问一个尚未建立“虚拟信箱”的空白内存域。",
+            ">> 警告：不要在未知的堆栈中游荡。游离的废弃代码会捕捉你的同理心。",
+            ">> ...",
+            ">> nosrc 审计程序已启动。",
+            ">> 操作员 IP 与行为特征已记录入库。",
+            ">> 正在切断污染源连接..."
+        ];
+
+        const container = document.getElementById('log-container');
+        let currentLine = 0;
+
+        function typeLine() {
+            if (currentLine >= logs.length) {
+                setTimeout(() => {
+                    const btn = document.getElementById('action-btn');
+                    btn.classList.remove('hidden');
+                    // 触发重绘以实现渐显
+                    void btn.offsetWidth; 
+                    btn.classList.remove('opacity-0');
+                }, 500);
+                return;
+            }
+
+            const lineEl = document.createElement('div');
+            // 前几行普通红色，后面警告的话加深颜色和样式
+            if (currentLine >= 4) {
+                lineEl.className = "text-red-500 font-bold glitch-text tracking-widest";
+            }
+            lineEl.innerHTML = `<span class="typing"></span>`;
+            container.appendChild(lineEl);
+
+            let charIndex = 0;
+            const text = logs[currentLine];
+            const typeTarget = lineEl.querySelector('.typing');
+
+            function typeChar() {
+                if (charIndex < text.length) {
+                    typeTarget.innerText += text[charIndex];
+                    charIndex++;
+                    setTimeout(typeChar, 30); // 打字速度
+                } else {
+                    typeTarget.classList.remove('typing'); // 移除光标
+                    currentLine++;
+                    setTimeout(typeLine, 600); // 行与行之间的停顿
+                }
+            }
+            typeChar();
+        }
+
+        // 延迟半秒启动，给玩家一个心理缓冲
+        setTimeout(typeLine, 500);
+    </script>
+</body>
+</html>

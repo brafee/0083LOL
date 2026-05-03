@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOSRC | Mailbox Endpoint</title>
+    <style>
+        :root {
+            --neon-green: #33ff33;
+            --dark-bg: #0a0a0a;
+            --alert-red: #ff3333;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--neon-green);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        /* 统一扫描线 */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            padding: 40px;
+            border: 2px solid var(--neon-green);
+            box-shadow: inset 0 0 20px rgba(51, 255, 51, 0.1);
+            position: relative;
+            background: rgba(0, 10, 0, 0.8);
+        }
+
+        header {
+            border-bottom: 2px solid var(--neon-green);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h1 { font-size: 1.2rem; margin: 0; letter-spacing: 4px; }
+
+        .form-group { margin-bottom: 25px; }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        input, textarea {
+            background: rgba(51, 255, 51, 0.05);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            font-family: inherit;
+            padding: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        input:focus, textarea:focus {
+            background: rgba(51, 255, 51, 0.15);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 5px;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: var(--neon-green);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        #console-output {
+            margin-top: 20px;
+            font-size: 0.7rem;
+            line-height: 1.6;
+            height: 120px;
+            overflow-y: auto;
+            border-top: 1px dashed var(--neon-green);
+            padding-top: 15px;
+            display: none;
+        }
+
+        .terminal-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: var(--neon-green);
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .error-text { color: var(--alert-red); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>[VIRTUAL_MAILBOX_V1.4]</h1>
+            <p style="font-size: 0.6rem; margin: 5px 0 0 0;">SUB-PROTOCOL: STARDUST_INCINERATION</p>
+        </div>
+        <div style="font-size: 0.6rem; text-align: right;">
+            SECURE_NODE: DC-07<br>
+            STATUS: MONITORING
+        </div>
+    </header>
+
+    <form id="mailForm">
+        <div class="form-group">
+            <label>> TARGET_IDENTIFIER (UID)</label>
+            <input type="text" id="recipient" placeholder="E.G. 0X0083FA" required autocomplete="off">
+        </div>
+        
+        <div class="form-group">
+            <label>> PAYLOAD_CONTENT (ENCRYPTED_TEXT)</label>
+            <textarea id="payload" rows="6" placeholder="INPUT MENTAL REMITTANCE DATA..." required></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn" class="submit-btn">[ EXECUTE_INCINERATION ]</button>
+    </form>
+
+    <div id="console-output"></div>
+</div>
+
+<script>
+    const form = document.getElementById('mailForm');
+    const output = document.getElementById('console-output');
+    const btn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const recipient = document.getElementById('recipient').value.toUpperCase();
+        
+        btn.disabled = true;
+        btn.innerText = "[ PROCESSING... ]";
+        output.style.display = "block";
+        output.innerHTML = "";
+
+        const logs = [
+            "> INITIALIZING INCINERATION SEQUENCE...",
+            "> EXTRACTING NEURAL FREQUENCY FROM PAYLOAD...",
+            "> STRIPPING EMOTIONAL REDUNDANCY... [DONE]",
+            "> DATA CONVERTED TO ASH_QUARK (12.4Q)",
+            `> ROUTING TO CO-PROCESSOR: SUBJECT_84`
+        ];
+
+        // 针对 0083 的特殊判定
+        if (recipient.includes("0083")) {
+            logs.push("<span class='error-text'>> ERROR: TARGET_NODE 0X0083FA IS VOID.</span>");
+            logs.push("<span class='error-text'>> WARNING: ATTEMPTING TO MAIL A GHOST.</span>");
+            logs.push("> DESTROYING CORRUPTED PAYLOAD... [SUCCESS]");
+        } else {
+            logs.push("> UPLINK SUCCESSFUL. DISPATCHING TO VOID.");
+            logs.push("> THANK YOU FOR YOUR CONTRIBUTION TO NOSRC.");
+        }
+
+        for (let log of logs) {
+            const line = document.createElement('div');
+            line.innerHTML = log;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+            await new Promise(r => setTimeout(r, 600));
+        }
+
+        btn.innerText = "[ PROTOCOL_TERMINATED ]";
+        btn.style.borderColor = "var(--alert-red)";
+        btn.style.color = "var(--alert-red)";
+    });
+</script>
+
+</body>
+</html>

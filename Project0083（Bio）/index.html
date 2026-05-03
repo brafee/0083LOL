@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0083.LOL | Internal Terminal</title>
+    <script src="https://unpkg.com/inkjs@2.2.3/dist/ink.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500;800&display=swap" rel="stylesheet">
+<style>
+        :root { --main-color: #34d399; --bg-dark: #030303; }
+        body { font-family: 'JetBrains Mono', monospace; background-color: var(--bg-dark); color: var(--main-color); overflow: hidden; }
+        
+        /* 视觉底层 */
+        .void-bg { position: fixed; inset: 0; background: radial-gradient(circle at center, #0a2f24 0%, var(--bg-dark) 80%); opacity: 0.3; z-index: -1; }
+        .glitch-title { font-size: 8rem; font-weight: 800; letter-spacing: -0.5rem; text-shadow: 0 0 30px var(--main-color); animation: pulse 4s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } }
+        .scanlines::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none; z-index: scanlines; }
+        
+        /* 终端框体 */
+        .terminal-box { backdrop-filter: blur(20px); background: rgba(5, 5, 5, 0.85); border: 1px solid rgba(52, 211, 153, 0.2); position: relative; }
+        
+        /* 隐藏原生滚动条 */
+        #output { scrollbar-width: none; -ms-overflow-style: none; }
+        #output::-webkit-scrollbar { display: none; }
+
+        /* ========================================================= */
+        /* [ 核心修改部分 ]: 顶部/底部渐隐 */
+        /* ========================================================= */
+        
+        /* 1. 移除原本在大框上的 ::before 和 ::after 硬编码遮罩 */
+        .terminal-box::before, .terminal-box::after { content: none; display: none; }
+
+        /* 2. 将遮罩直接通过 CSS Mask 应用在 `#output` 文字区域内部 */
+        /* 这样无论选项框多高，遮罩永远不会盖住按钮 */
+        #output {
+            overflow-y: auto; /* 确保超出时可滚动 */
+            
+            /* 标准语法 (用于 Modern Browsers) */
+            mask-image: linear-gradient(to bottom, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%);
+            
+            /* Webkit 语法 (用于 Chrome, Safari, Edge, 移动端浏览器) */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60px, black calc(100% - 60px), transparent 100%);
+            
+            /* 修正因 Mask 导致的层级问题，确保按钮可点 */
+            z-index: 1; 
+        }
+
+        /* 干扰特效 */
+        .interference { animation: digital-noise 0.2s infinite; }
+        @keyframes digital-noise {
+            0% { filter: contrast(1.1) hue-rotate(0deg); opacity: 1; }
+            20% { filter: contrast(1.5) hue-rotate(10deg); clip-path: inset(10% 0 30% 0); }
+            50% { filter: contrast(1.2) hue-rotate(-5deg); opacity: 0.98; }
+            80% { filter: contrast(1.4) hue-rotate(5deg); clip-path: inset(50% 0 10% 0); }
+            100% { filter: contrast(1.1) hue-rotate(0deg); opacity: 1; }
+        }
+
+        .binary-char { transition: all 0.2s; opacity: 0.15; font-size: 1.5rem; }
+        .binary-correct { color: var(--main-color); opacity: 1; text-shadow: 0 0 12px var(--main-color); }
+        .binary-error { animation: flash-red 0.3s; }
+        @keyframes flash-red { 50% { background: #ef4444; color: white; } }
+        
+        .typing::after { content: "_"; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center scanlines">
+    <div class="void-bg"></div>
+
+    <div id="splash" class="fixed inset-0 flex flex-col items-center justify-center z-[200] bg-[#030303] transition-all duration-1000">
+        <h1 class="glitch-title">0083</h1>
+        <div class="mt-16 text-center space-y-8">
+            <h2 class="text-emerald-500/50 tracking-[0.4em] text-sm font-light italic">SYNETHESIA INJECTION</h2>
+            
+            <div class="flex justify-center gap-6 text-[10px] font-bold tracking-[0.4em] mb-2">
+                <button id="lang-zh" onclick="setLang('zh')" class="text-emerald-400 border-b border-emerald-400 pb-1 transition-all">中文</button>
+                <button id="lang-en" onclick="setLang('en')" class="text-emerald-800 hover:text-emerald-500 pb-1 transition-all">ENGLISH</button>
+            </div>
+
+            <button onclick="enterSystem()" class="group relative px-14 py-4 border border-emerald-500/30 hover:border-emerald-400 transition-all duration-500">
+                <span id="btn-inject-text" class="text-emerald-500 group-hover:text-emerald-400 tracking-[0.8em] font-bold text-xs uppercase">[ 注入意识 ]</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="terminal" class="hidden w-full max-w-5xl h-[90vh] flex flex-col relative opacity-0 transition-opacity duration-1000 z-10 terminal-box shadow-2xl">
+        <div class="flex justify-between items-center px-4 sm:px-10 py-3 sm:py-4 border-b border-emerald-900/20 text-[9px] sm:text-[10px] text-emerald-500/40 tracking-widest sm:tracking-[0.4em] font-bold shrink-0">
+        <div class="truncate">NODE: 0x0083FA <span class="hidden sm:inline">| <span class="opacity-30">ARCHITECT: BRAFEE</span> | STATUS: ACTIVE</span></div>
+        <div id="timer" class="ml-2 whitespace-nowrap">LA_PST: --:--:--</div>
+    </div>
+        <div id="output" class="p-14 pb-4 flex-1 overflow-y-auto space-y-8 text-[16px] leading-loose"></div>
+        <div id="choice-container" class="min-h-[180px] p-8 border-t border-emerald-900/20 flex flex-wrap items-center justify-center gap-4 bg-black/40"></div>
+    </div>
+
+    <script>
+        let story;
+        const SAVE_KEY = "0083_save_state";
+        const DECODE_KEY = "0083_decode_start";
+        const MISSION_START_KEY = "0083_shanghai_mission";
+        const LANG_KEY = "0083_language";
+
+        const i18n = {
+            zh: {
+                inject: "[ 注入意识 ]",
+                resume_hang: "检测到未完成的系统挂起进程...",
+                resume_sync: "恢复同步断点...",
+                auth_err: "AUTH_ERR: 密钥无效或窗口未开启",
+                epi_log: ">> 物理资产扫描完毕。\n>> 操作员同理心过载，符合收容标准。\n>> 逻辑容器挂载成功。虚拟信箱已为您建档。\n>> \n>> 早上好，[ Subject_84 ]。\n>> 您的第一份哀思处理工单已下发。\n>> [ 协议终止 ]"
+            },
+            en: {
+                inject: "[ INJECT CONSCIOUSNESS ]",
+                resume_hang: "DETECTED UNFINISHED SUSPENDED PROCESS...",
+                resume_sync: "RESTORING SYNC CHECKPOINT...",
+                auth_err: "AUTH_ERR: INVALID KEY OR WINDOW CLOSED",
+                epi_log: ">> PHYSICAL ASSET SCAN COMPLETE.\n>> OPERATOR EMPATHY OVERLOAD. CONTAINMENT CRITERIA MET.\n>> LOGIC CONTAINER MOUNTED. VIRTUAL MAILBOX ARCHIVED.\n>> \n>> GOOD MORNING, [ SUBJECT_84 ].\n>> YOUR FIRST GRIEF PROCESSING WORK ORDER HAS BEEN ISSUED.\n>> [ PROTOCOL TERMINATED ]"
+            }
+        };
+
+        let currentLang = localStorage.getItem(LANG_KEY) || 'zh';
+        
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem(LANG_KEY, lang);
+            updateUILang();
+        }
+
+        function updateUILang() {
+            document.getElementById('lang-zh').className = currentLang === 'zh' ? "text-emerald-400 border-b border-emerald-400 pb-1 transition-all" : "text-emerald-800 hover:text-emerald-500 pb-1 transition-all";
+            document.getElementById('lang-en').className = currentLang === 'en' ? "text-emerald-400 border-b border-emerald-400 pb-1 transition-all" : "text-emerald-800 hover:text-emerald-500 pb-1 transition-all";
+            document.getElementById('btn-inject-text').innerText = i18n[currentLang].inject;
+        }
+        
+        updateUILang();
+
+        const sfx = {
+            ambient: new Audio('audio/ambient.mp3'),
+            type: new Audio('audio/type.mp3'),
+            sys: new Audio('audio/system.mp3'),
+            hdd: new Audio('audio/hdd.mp3')
+        };
+        sfx.ambient.loop = true; sfx.ambient.volume = 0.3;
+        sfx.hdd.loop = true; sfx.hdd.volume = 0.0; 
+        sfx.type.volume = 0.4;
+        sfx.sys.volume = 0.3;
+
+        setInterval(() => {
+            const time = new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles", hour12: false}).split(', ')[1];
+            if(document.getElementById('timer')) document.getElementById('timer').innerText = `LA_PST: ${time}`;
+        }, 1000);
+
+        function saveGame() { if (story) localStorage.setItem(SAVE_KEY, story.state.toJson()); }
+
+        async function enterSystem() {
+            try {
+                sfx.ambient.play().catch(e=>{});
+                sfx.hdd.play().catch(e=>{});
+
+                const jsonFile = currentLang === 'en' ? '0083_en.json' : '0083_zh.json';
+                const response = await fetch(jsonFile);
+                story = new inkjs.Story(await response.json());
+                
+                document.getElementById('splash').style.opacity = '0';
+                
+                setTimeout(() => {
+                    document.getElementById('splash').style.display = 'none';
+                    const term = document.getElementById('terminal');
+                    term.classList.remove('hidden'); term.style.opacity = '1';
+                    
+                    const saved = localStorage.getItem(SAVE_KEY);
+                    const decodeStart = localStorage.getItem(DECODE_KEY); 
+                    const missionStart = localStorage.getItem(MISSION_START_KEY);
+
+                    if (saved) {
+                        story.state.LoadJson(saved);
+                        if ((decodeStart && story.currentTags.includes("INPUT_PASSWORD")) || missionStart) {
+                            document.getElementById('output').innerHTML = '';
+                            addLine(i18n[currentLang].resume_hang, "system");
+                            renderChoices(); 
+                        } else {
+                            const isDone = story.currentTags.includes("FINAL_SHUTDOWN");
+                            if (isDone) {
+                                localStorage.clear(); story.ResetState(); continueStory();
+                            } else {
+                                document.getElementById('output').innerHTML = '';
+                                addLine(i18n[currentLang].resume_sync, "system"); refreshUI();
+                            }
+                        }
+                    } else { 
+                        story.ResetState(); continueStory(); 
+                    }
+                }, 800);
+            } catch (e) { alert("System Init Failed. 检查 .json 文件名是否对应。"); }
+        }
+
+        function continueStory() {
+            if (!story) return;
+            while (story.canContinue) {
+                const text = story.Continue().trim();
+                if (text) {
+                    const is0083 = text.startsWith("0083:");
+                    addLine(text.replace("0083:", "").trim(), is0083 ? '0083' : 'system');
+                    return;
+                }
+            }
+            renderChoices();
+        }
+
+        function addLine(text, type) {
+            const output = document.getElementById('output');
+            const line = document.createElement('div');
+            
+            if (type === '0083') {
+                line.className = "text-emerald-300 font-medium";
+                line.innerHTML = `<span class="opacity-30 text-[10px] mr-4 italic">0083></span><span class="typing"></span>`;
+                output.appendChild(line);
+                typeWriter(line.querySelector('.typing'), text);
+            } else if (type === 'user') {
+                line.className = "text-right text-emerald-500/50 text-[11px] py-2 italic tracking-[0.2em]";
+                line.innerText = `>> AUTH_USER: ${text}`;
+                output.appendChild(line);
+            } else {
+                sfx.sys.currentTime = 0; sfx.sys.play().catch(e=>{});
+                line.className = "text-emerald-800 text-[11px] uppercase tracking-[0.3em] border-l-2 border-emerald-900/30 pl-6 py-1 my-4";
+                line.innerText = text;
+                output.appendChild(line);
+                
+                if (story.currentTags.includes("FINAL_SHUTDOWN")) {
+                    setTimeout(handleTags, 2000); 
+                } else if (story.currentTags.includes("INPUT_PASSWORD") || story.currentTags.includes("WAIT_FOR_BINARY")) {
+                    handleTags(); renderChoices();
+                } else {
+                    handleTags(); 
+                    if(story.canContinue) setTimeout(continueStory, 1200); 
+                    else renderChoices(); 
+                }
+            }
+            output.scrollTo({ top: output.scrollHeight, behavior: 'smooth' });
+        }
+
+        function typeWriter(el, text, i = 0) {
+            if (i < text.length) {
+                el.innerText += text[i];
+                if (i % 3 === 0) { sfx.type.currentTime = 0; sfx.type.play().catch(e=>{}); }
+                setTimeout(() => typeWriter(el, text, i + 1), 25);
+            } else { 
+                saveGame(); 
+                if (story.currentTags.includes("FINAL_SHUTDOWN")) {
+                    setTimeout(handleTags, 2000); 
+                } else if (story.currentTags.includes("INPUT_PASSWORD") || story.currentTags.includes("WAIT_FOR_BINARY")) {
+                    handleTags(); renderChoices();
+                } else {
+                    handleTags();
+                    if (story.canContinue) setTimeout(continueStory, 800); 
+                    else renderChoices();
+                }
+            }
+        }
+
+        function handleTags() {
+            const tags = story.currentTags;
+            const term = document.getElementById('terminal');
+            
+            if (tags.includes("TRIGGER_CPU")) {
+                term.classList.add('interference'); sfx.hdd.volume = 0.7; 
+            }
+            
+            if (tags.includes("SCREEN_GLITCH")) {
+                const dot = document.createElement('div');
+                dot.style.cssText = "position:fixed;top:50%;left:50%;width:8px;height:8px;background:#ff0000;box-shadow:0 0 20px #ff0000;z-index:1000;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;";
+                dot.className = "animate-pulse"; document.body.appendChild(dot);
+            }
+            
+            if (tags.includes("SCAN_FILES")) {
+                const scanLog = [">> SCANNING: C:/Users/Admin/Documents...", ">> ACCESSING: Keychain.db...", ">> TRACKING KEYSTROKES: ACTIVE", ">> SYNCING SHADOW_PROCESS: 0x0083"];
+                let delay = 0;
+                scanLog.forEach(log => {
+                    setTimeout(() => {
+                        const line = document.createElement('div');
+                        line.className = "text-red-900/40 text-[9px] tracking-tighter italic";
+                        line.innerText = log;
+                        document.getElementById('output').appendChild(line);
+                        document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
+                    }, delay); delay += 400;
+                });
+            }
+            
+            if (tags.includes("FILE_INJECTION")) {
+                if(!localStorage.getItem(DECODE_KEY)) {
+                    localStorage.setItem(DECODE_KEY, Date.now()); 
+                    const blob = new Blob(["NOSRC_ENCRYPTED_PATCH\nSTART_TIME: " + new Date().toISOString() + "\nDECODE_REQ: 2.00 HOURS\n[ WARNING: DO NOT DELETE DURING DECRYPTION ]"], {type: "text/plain"});
+                    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "0x83_decoder_logic.txt"; a.click();
+                }
+            }
+
+            if (tags.includes("START_ASYNC_MISSION")) {
+                if (!localStorage.getItem(MISSION_START_KEY)) { localStorage.setItem(MISSION_START_KEY, Date.now()); }
+            }
+            
+            if (tags.includes("FINAL_SHUTDOWN")) {
+                sfx.ambient.volume = 0; sfx.hdd.volume = 0; triggerEpilogue();
+            }
+        }
+
+        function renderChoices() {
+            const container = document.getElementById('choice-container');
+            container.innerHTML = '';
+            const tags = story.currentTags;
+
+            // 45分钟潜入判定
+            const missionStart = localStorage.getItem(MISSION_START_KEY);
+            if (missionStart) {
+                const missionWaitTime = 45 * 60 * 1000; 
+                const now = Date.now();
+                const elapsed = now - missionStart;
+                
+                if (elapsed < missionWaitTime) {
+                    const remaining = missionWaitTime - elapsed;
+                    const mins = Math.floor(remaining / 60000).toString().padStart(2, '0');
+                    const secs = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+                    
+                    container.innerHTML = `<div class="w-full text-center space-y-4">
+                        <div class="text-[12px] text-emerald-500 font-bold tracking-[0.5em] animate-pulse">>> MISSION ACTIVE: SHANGHAI_NODE_INFILTRATION</div>
+                        <div class="text-[10px] text-emerald-600 tracking-widest italic">MAINTAINING STEALTH UPLINK...</div>
+                        <div class="text-2xl text-emerald-400 font-mono font-black tracking-widest mt-4">T-MINUS ${mins}:${secs}</div>
+                    </div>`;
+                    
+                    sfx.ambient.volume = 0.1; 
+                    setTimeout(renderChoices, 1000);
+                    return; 
+                } else {
+                    localStorage.removeItem(MISSION_START_KEY);
+                    sfx.ambient.volume = 0.3; 
+                    story.ChoosePathString("return_from_shanghai");
+                    continueStory(); return;
+                }
+            }
+
+            // 2小时等待判定
+            if (tags.some(t => t.includes("INPUT_PASSWORD"))) {
+                const startTime = localStorage.getItem(DECODE_KEY);
+                const waitTime = 2 * 60 * 60 * 1000; 
+                const now = Date.now();
+
+                if (startTime) {
+                    if (now - startTime < waitTime) {
+                        const progress = ((now - startTime) / waitTime * 100).toFixed(4);
+                        container.innerHTML = `<div class="w-full text-center space-y-4">
+                            <div class="text-[10px] text-emerald-500/40 tracking-[0.5em] animate-pulse">DECODING LOCAL SEED...</div>
+                            <div class="w-80 h-1 bg-emerald-950 mx-auto overflow-hidden"><div class="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style="width: ${progress}%"></div></div>
+                            <div class="text-[10px] text-emerald-400 font-bold tracking-widest">PROGRESS: ${progress}% / CPU LOAD: MAX</div>
+                        </div>`;
+                        
+                        sfx.hdd.volume = 0.5;
+                        setTimeout(renderChoices, 10000); return; 
+                    } else {
+                        localStorage.removeItem(DECODE_KEY);
+                        sfx.hdd.volume = 0; continueStory(); return;
+                    }
+                } 
+                renderSeedInput(container); return;
+            } 
+            
+            if (tags.some(t => t.includes("WAIT_FOR_BINARY"))) {
+                renderBinaryInput(container); return;
+            }
+            
+            story.currentChoices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = "px-6 py-2 border border-emerald-500/30 text-emerald-400 text-[11px] tracking-widest hover:border-emerald-400 hover:text-emerald-200 hover:bg-emerald-500/10 transition-all duration-300";
+                btn.innerText = `[ ${choice.text.toUpperCase()} ]`;
+                btn.onclick = () => { 
+                    sfx.type.currentTime = 0; sfx.type.play().catch(e=>{});
+                    addLine(choice.text, 'user'); 
+                    story.ChooseChoiceIndex(choice.index); 
+                    container.innerHTML = ''; 
+                    setTimeout(continueStory, 400); 
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSeedInput(container) {
+            const input = document.createElement('input');
+            input.className = "bg-transparent border-b-2 border-emerald-500/30 text-emerald-300 text-center outline-none uppercase tracking-[1.2em] text-sm py-4 w-96 focus:border-emerald-400 transition-all";
+            input.placeholder = ""; input.setAttribute('autocomplete', 'off'); 
+            container.appendChild(input); input.focus();
+            
+            input.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    sfx.sys.currentTime = 0; sfx.sys.play().catch(e=>{});
+                    const val = e.target.value.trim().toUpperCase();
+                    const laTime = new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles", hour12: false});
+                    const [h, m] = laTime.split(', ')[1].split(':').map(Number);
+                    
+                    if (val === "DEBUG_SKIP" || (val === "SEED_83" && h === 11 && m >= 15 && m <= 18)) {
+                        addLine(val, 'user'); story.ChoosePathString("start_of_act_2"); container.innerHTML = ''; continueStory();
+                    } else { 
+                        input.value = ""; console.log(i18n[currentLang].auth_err); 
+                    }
+                }
+            };
+        }
+
+        function renderBinaryInput(container) {
+            const target = "01000110010100100100010101000101";
+            let pos = 0;
+            container.innerHTML = `<div id="binary-display" class="flex flex-wrap justify-center gap-2 font-bold"></div>`;
+            const display = document.getElementById('binary-display');
+            
+            for(let char of target) {
+                const span = document.createElement('span'); span.innerText = char; span.className = "binary-char";
+                display.appendChild(span);
+            }
+            
+            const handler = (e) => {
+                if (e.key === '0' || e.key === '1') {
+                    sfx.type.currentTime = 0; sfx.type.play().catch(e=>{}); 
+                    const spans = display.querySelectorAll('span');
+                    if (e.key === target[pos]) {
+                        spans[pos].classList.add('binary-correct'); pos++;
+                        if (pos === target.length) { 
+                            window.removeEventListener('keydown', handler); 
+                            saveGame(); continueStory(); 
+                        }
+                    } else {
+                        display.classList.add('binary-error');
+                        setTimeout(() => { display.classList.remove('binary-error'); spans.forEach(s => s.classList.remove('binary-correct')); pos = 0; }, 300);
+                    }
+                }
+            };
+            window.addEventListener('keydown', handler);
+        }
+
+        function triggerEpilogue() {
+            document.body.style.transition = "background-color 4s ease";
+            document.body.style.backgroundColor = "white";
+            setTimeout(() => {
+                document.body.innerHTML = `<div id="epilogue-screen" style="color:black; font-family:'JetBrains Mono',monospace; padding:80px; max-width:800px; margin: 15vh auto; line-height:2.5; background: white; border: 1px solid rgba(0,0,0,0.1); opacity: 0; transition: opacity 3s ease;"><div style="border-bottom: 3px solid black; padding-bottom:15px; margin-bottom:50px; font-weight:800; font-size:16px; display:flex;"><span>NOSRC INTERNAL REPORT</span><span style="margin-left:auto">AUTH: BRAFEE</span></div><div id="epi-content" style="white-space: pre-wrap; font-size: 14px;"></div></div>`;
+                document.getElementById('epilogue-screen').style.opacity = '1';
+                
+                const log = i18n[currentLang].epi_log; 
+                
+                let i = 0; 
+                const timer = setInterval(() => { 
+                    document.getElementById('epi-content').innerText += log[i]; i++; 
+                    if (i >= log.length) { 
+                        clearInterval(timer); 
+                        localStorage.removeItem(SAVE_KEY); 
+                        localStorage.removeItem(DECODE_KEY); 
+                        localStorage.removeItem(MISSION_START_KEY); 
+                    } 
+                }, 100);
+            }, 2500);
+        }
+
+        function refreshUI() { document.getElementById('output').innerHTML = ''; if (story.canContinue) continueStory(); else renderChoices(); }
+    </script>
+</body>
+</html>
