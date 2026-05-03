@@ -1,69 +1,67 @@
 0083.LOL | Internal Terminal
 "We are all just ghosts in the machine."
 
-<img width="1260" height="1430" alt="0083" src="https://github.com/user-attachments/assets/11b705d7-12b6-49c9-99a2-7fb01f6ad9b0" />
+NODE: 0x0083FA | STATUS: ACTIVE | ARCHITECT: BRAFEE
+<img width="630" height="715" alt="0083(1)" src="https://github.com/user-attachments/assets/d3ef3705-7d64-4a0b-8a67-e19ea0fd7fe3" />
+0x01 Overview
+0083.LOL is a web-based immersive narrative experience (ARG). It simulates a low-level access terminal belonging to the mysterious organization known as nosrc (National Organization for Supernatural and Research Computation).
 
-NODE: 0x0083FA | STATUS: ENCRYPTED | ARCHITECT: BRAFEE
+As an operator, you will establish a logic synchronization with Subject 83 (Fei). This is more than a choice-based game—it is an intrusive experience that blurs the line between digital code and the physical world through real-time mechanics, hardware simulation, and a narrative that questions the very nature of your own reality.
 
-0x01 项目概述 (Overview)
-0083.LOL 是一个基于 Web 的侵入式叙事体验（ARG）。它模拟了一个来自神秘组织 nosrc（国家超自然与神秘学研究中心）的底层终端。
+0x02 Key Features
+Bilingual Sync Protocol: Full support for English and Chinese (ZH/EN) with independent .json script delivery logic.
 
-玩家（操作员）将通过一个逻辑容器与 Subject 83 (Fei) 建立同步。这不仅仅是一个选择支游戏，它通过物理感知的模拟（CPU 负载发热）、真实时间的锁定以及异步任务逻辑，模糊了数字代码与现实世界之间的界限。
+Temporal Validation Window: The core backdoor only opens between 11:15 AM and 11:18 AM (Los Angeles Time) daily, simulating a specific vulnerability in the system's clock rollback validation.
 
-0x02 核心特性 (Key Features)
-双语协议 (Bilingual Sync): 全量支持中文与英文双语切换，内置独立的 .json 剧本分发逻辑。
+Asynchronous Infiltration: Features a 45-minute real-time infiltration mission. Even if the browser is closed, the task anchor is maintained via localStorage.
 
-时空校验窗口 (Time-Locked Access): 核心剧情入口仅在每天洛杉矶时间 11:15 - 11:18 AM 开启，模拟系统后门校验漏洞。
+Computational Sacrifice: The final act requires a 2-hour "Data Incineration" ritual, using local CPU load to simulate the "release" of a digital consciousness through thermal heat.
 
-异步潜入任务 (Asynchronous Infiltration): 包含一个 45 分钟的实时潜入任务。玩家关闭网页后，localStorage 仍会维持任务锚点。
+Turing Inversion Narrative: Explores themes of "soul securitization" and AI replacement, ultimately challenging the operator's perception of their own "humanity."
 
-物理共感仪式 (Physical Incineration): 最终章通过 2 小时的“算力焚烧”仪式，利用本地硬件发热模拟对数字意识的“超度”。
-
-图灵倒转叙事 (Turing Inversion): 深度探索“灵魂证券化”与“AI 替代”的社会学命题，挑战操作员对自身“真实性”的认知。
-
-0x03 技术栈 (Tech Stack)
+0x03 Technical Stack
 Story Engine: Inkjs (The interactive narrative language).
 
-Frontend: HTML5, Vanilla JavaScript, Tailwind CSS (Visual framework).
+Frontend: HTML5, Vanilla JavaScript, Tailwind CSS.
 
-Audio Engine: 自研轻量级 Web Audio 调度器，支持环境音、读写音效、系统警告音的动态混音。
+Audio Engine: A custom lightweight Web Audio scheduler supporting dynamic mixing of ambient loops, typewriter effects, and mechanical HDD seek sounds.
 
-State Management: 基于 localStorage 的断点续传与任务锚点持久化。
+State Management: Persistent state and mission anchors handled via localStorage for seamless "re-syncing" upon page refresh.
 
-0x04 快速开始 (Setup)
-本项目由于涉及 fetch 读取 .json 剧本文件，必须在本地服务器环境下运行。
+0x04 Quick Start (Setup)
+Since the project uses fetch to retrieve .json story files, it must be run within a local or hosted server environment.
 
-克隆仓库:
+Clone the Repository:
 
 Bash
-git clone https://github.com/你的用户名/0083LOL.git
-部署音频:
-确保 audio/ 目录下包含以下文件：
+git clone https://github.com/BRAFEE/0083LOL.git
+Audio Assets:
+Ensure the audio/ directory contains the following:
 
-ambient.mp3 (环境背景音)
+ambient.mp3 (Background drone)
 
-type.mp3 (打字机效果音)
+type.mp3 (Mechanical keystrokes)
 
-system.mp3 (系统提示音)
+system.mp3 (UI notifications)
 
-hdd.mp3 (硬盘读写震动音)
+hdd.mp3 (HDD seek/vibration sounds)
 
-运行项目:
-使用 VS Code 的 Live Server 扩展或 Python 命令启动：
+Run the Project:
+Launch via VS Code Live Server or a Python command:
 
 Bash
 python -m http.server 8000
-访问: 打开浏览器访问 http://localhost:8000。
+Access: Open your browser to http://localhost:8000.
 
-0x05 档案结构 (File Structure)
+0x05 File Structure
 Plaintext
-├── index.html          # 主程序 (Terminal UI & Logic)
-├── 0083_zh.json        # 中文剧本编译文件
-├── 0083_en.json        # 英文剧本编译文件
-├── audio/              # 音频资源包
-└── README.md           # 本文档
-0x06 警告 (Warning)
-[系统警告]：本程序包含对 CPU 负载的模拟请求。请确保你的物理散热系统运行正常。nosrc 不对任何因同理心过载或硬件过热导致的资产损毁负责。
+├── index.html          # Main Application (Terminal UI & Logic)
+├── 0083_zh.json        # Compiled Chinese Script
+├── 0083_en.json        # Compiled English Script
+├── audio/              # Soundscape Assets
+└── README.md           # This document
+0x06 Warning
+[SYSTEM ALERT]: This program contains requests that simulate high CPU load. Please ensure your physical cooling system is functioning correctly. nosrc is not responsible for any asset damage resulting from empathy overload or hardware overheating.
 
 AUDITOR: BRAFEE
-[ 协议终止 ]
+[ PROTOCOL TERMINATED ]
