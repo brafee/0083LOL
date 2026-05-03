@@ -67,6 +67,3 @@ Plaintext
 
 AUDITOR: BRAFEE
 [ 协议终止 ]
-README 图片：如果你有游戏界面的截图，可以在 README.md 里加一张图，这样在 GitHub 首页看起来会非常惊艳。
-
-License：建议选 MIT（最宽松）或者 CC BY-NC-SA（允许分享但禁止商用，符合 ARG 调性）。
