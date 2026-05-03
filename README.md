@@ -4,7 +4,7 @@
 NODE: 0x0083FA | STATUS: ACTIVE | ARCHITECT: BRAFEE
 <img width="630" height="715" alt="0083(1)" src="https://github.com/user-attachments/assets/d3ef3705-7d64-4a0b-8a67-e19ea0fd7fe3" />
 0x01 Overview
-0083.LOL is a web-based immersive narrative experience (ARG). It simulates a low-level access terminal belonging to the mysterious organization known as nosrc (National Organization for Supernatural and Research Computation).
+0083.LOL is a web-based immersive narrative experience (ARG). It simulates a low-level access terminal belonging to the mysterious organization known as nosrc (National Occult and Supernatural Research Center).
 
 As an operator, you will establish a logic synchronization with Subject 83 (Fei). This is more than a choice-based game—it is an intrusive experience that blurs the line between digital code and the physical world through real-time mechanics, hardware simulation, and a narrative that questions the very nature of your own reality.
 
